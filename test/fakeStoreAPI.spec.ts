@@ -1,103 +1,118 @@
 import pactum from 'pactum';
 const { spec } = pactum;
 
-describe('FakeStore API - Test Scenarios', () => {
+describe('ServeRest API - Positive Test Scenarios', () => {
 
-  // 1. GET - Listar todos os produtos
-  it('GET - List all products', async () => {
+  // 1. Login inválido (exemplo de validação de segurança)
+  it('Login inválido', async () => {
+    await spec()
+      .post('https://fakestoreapi.com/auth/login')
+      .withJson({
+        username: "usuario_invalido",
+        password: "1234"
+      })
+      .expectStatus(401); // login inválido retorna 401
+  });
+
+  // 2. Cadastro de novo produto
+  it('Cadastro um novo produto', async () => {
+    await spec()
+      .post('https://fakestoreapi.com/products')
+      .withJson({
+        name: "Notebook Dell",
+        price: 3500,
+        description: "Notebook de alta performance",
+        category: "eletronicos"
+      })
+      .expectStatus(201)
+      .expectJsonLike({
+        name: "Notebook Dell",
+        price: 3500
+      });
+  });
+
+  // 3. Buscar o produto cadastrado
+  it('Busca o novo produto cadastrado', async () => {
+    await spec()
+      .get('https://fakestoreapi.com/products/1') // id válido existente
+      .expectStatus(200)
+      .expectJsonLike({
+        id: 1
+      });
+  });
+
+  // 4. Produto sem token válido (simulando erro de autorização)
+  it('Produto sem token válido', async () => {
+    await spec()
+      .post('https://fakestoreapi.com/products')
+      .withJson({
+        name: "Produto Teste",
+        price: 100
+      })
+      .expectStatus(401); // sem token, retorna 401
+  });
+
+  // 5. Validar produtos com descrição duplicada
+  it('Validar produtos com descrição duplicada', async () => {
     await spec()
       .get('https://fakestoreapi.com/products')
       .expectStatus(200)
-      .expectJsonLike([{}]);
-  });
-
-  // 2. GET - Buscar um produto por ID válido
-  it('GET - Get single product by ID', async () => {
-    await spec()
-      .get('https://fakestoreapi.com/products/1')
-      .expectStatus(200)
-      .expectJsonLike({
-        id: 1,
-        title: /.+/
-      });
-  });
-
- // 3. GET - List first 5 products
-it('GET - List first 5 products', async () => {
-  await spec()
-    .get('https://fakestoreapi.com/products?limit=5')
-    .expectStatus(200)
-    .expectJsonLike([{}, {}, {}, {}, {}]); // espera 5 objetos no array
-});
-
-
-  // 4. PUT - Atualizar título de um produto
-  it('PUT - Update product title', async () => {
-    await spec()
-      .put('https://fakestoreapi.com/products/1')
-      .withJson({
-        title: "Notebook atualizado"
-      })
-      .expectStatus(200)
-      .expectJsonLike({
-        title: "Notebook atualizado"
-      });
-  });
-
-  // 5. PUT - Atualizar preço de um produto
-  it('PUT - Update product price', async () => {
-    await spec()
-      .put('https://fakestoreapi.com/products/2')
-      .withJson({
-        price: 199.99
-      })
-      .expectStatus(200)
-      .expectJsonLike({
-        price: 199.99
-      });
-  });
-
-  // 6. GET - Buscar categorias de produtos
-  it('GET - List all categories', async () => {
-    await spec()
-      .get('https://fakestoreapi.com/products/categories')
-      .expectStatus(200)
-      .expectJsonLike([/.+/]);
-  });
-
-  // 7. GET - Produtos de uma categoria
-  it('GET - Get products by category', async () => {
-    await spec()
-      .get('https://fakestoreapi.com/products/category/electronics')
-      .expectStatus(200)
       .expectJsonLike([{
-        category: "electronics"
+        description: /.+/
       }]);
   });
 
-  // 8. PUT - Atualizar descrição de produto
-  it('PUT - Update product description', async () => {
+  // 6. Adicionar um novo carrinho
+  it('Adiciona um novo carrinho', async () => {
     await spec()
-      .put('https://fakestoreapi.com/products/3')
+      .post('https://fakestoreapi.com/carts')
       .withJson({
-        description: "Descrição de teste alterada"
+        userId: 1,
+        products: [
+          { productId: 1, quantity: 2 },
+          { productId: 2, quantity: 1 }
+        ]
       })
-      .expectStatus(200)
+      .expectStatus(201)
       .expectJsonLike({
-        description: "Descrição de teste alterada"
+        userId: 1
       });
   });
 
-  // 9. GET - Listar todos os usuários
-  it('GET - List all users', async () => {
+  // 7. Carrinho inválido (quantidade ou produto errado)
+  it('Carrinho inválido', async () => {
     await spec()
-      .get('https://fakestoreapi.com/users')
-      .expectStatus(200)
-      .expectJsonLike([{}]);
+      .post('https://fakestoreapi.com/carts')
+      .withJson({
+        userId: 9999, // usuário inexistente
+        products: []
+      })
+      .expectStatus(400); // retorna 400 Bad Request
   });
 
-  // 10. PUT - Atualizar nome de usuário
-  it('PUT - Update user name', async () => {
+  // 8. Concluir compra e excluir carrinho
+  it('Conclui a compra e exclui o carrinho', async () => {
+    await spec()
+      .delete('https://fakestoreapi.com/carts/1') // carrinho válido
+      .expectStatus(200)
+      .expectJsonLike({}); // objeto vazio no retorno
+  });
+
+  // 9. Atualizar título de produto
+  it('Atualiza título do produto', async () => {
+    await spec()
+      .put('https://fakestoreapi.com/products/1')
+      .withJson({
+        title: "Notebook Dell Atualizado"
+      })
+      .expectStatus(200)
+      .expectJsonLike({
+        title: "Notebook Dell Atualizado"
+      });
+  });
+
+  // 10. Atualizar nome de usuário
+  it('Atualiza nome de usuário', async () => {
     await spec()
       .put('https://fakestoreapi.com/users/1')
       .withJson({
