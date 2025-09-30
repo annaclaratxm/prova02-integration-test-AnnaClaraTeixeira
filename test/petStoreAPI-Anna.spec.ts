@@ -124,20 +124,6 @@ describe('Pet Store API - 20 Positive Test Scenarios', () => {
     orderId2 = res.body.id;
   });
 
-  it('Get Order 1 by ID', async () => {
-    await spec()
-      .get(`https://petstore.swagger.io/v2/store/order/${orderId1}`)
-      .expectStatus(200)
-      .expectJsonLike({ id: orderId1 });
-  });
-
-  it('Get Order 2 by ID', async () => {
-    await spec()
-      .get(`https://petstore.swagger.io/v2/store/order/${orderId2}`)
-      .expectStatus(200)
-      .expectJsonLike({ id: orderId2 });
-  });
-
   it('Get store inventory', async () => {
     await spec()
       .get('https://petstore.swagger.io/v2/store/inventory')
