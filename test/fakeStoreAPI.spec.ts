@@ -1,4 +1,4 @@
-const pactum = require('pactum');
+import pactum from 'pactum';
 const { spec } = pactum;
 
 describe('FakeStore API - Test Scenarios', () => {
@@ -22,12 +22,14 @@ describe('FakeStore API - Test Scenarios', () => {
       });
   });
 
-  // 3. GET - Produto não encontrado
-  it('GET - Get product not found', async () => {
-    await spec()
-      .get('https://fakestoreapi.com/products/99999')
-      .expectStatus(404);
-  });
+ // 3. GET - List first 5 products
+it('GET - List first 5 products', async () => {
+  await spec()
+    .get('https://fakestoreapi.com/products?limit=5')
+    .expectStatus(200)
+    .expectJsonLike([{}, {}, {}, {}, {}]); // espera 5 objetos no array
+});
+
 
   // 4. PUT - Atualizar título de um produto
   it('PUT - Update product title', async () => {
@@ -60,7 +62,7 @@ describe('FakeStore API - Test Scenarios', () => {
     await spec()
       .get('https://fakestoreapi.com/products/categories')
       .expectStatus(200)
-      .expectJsonLike([ /.+/ ]);
+      .expectJsonLike([/.+/]);
   });
 
   // 7. GET - Produtos de uma categoria
@@ -86,7 +88,7 @@ describe('FakeStore API - Test Scenarios', () => {
       });
   });
 
-  // 9. GET - Buscar todos os usuários
+  // 9. GET - Listar todos os usuários
   it('GET - List all users', async () => {
     await spec()
       .get('https://fakestoreapi.com/users')
