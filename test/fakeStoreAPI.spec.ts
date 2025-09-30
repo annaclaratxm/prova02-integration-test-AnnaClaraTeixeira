@@ -1,127 +1,184 @@
 import pactum from 'pactum';
 const { spec } = pactum;
 
-describe('ServeRest API - Positive Test Scenarios', () => {
+describe('Pet Store API - 20 Positive Test Scenarios', () => {
 
-  // 1. Login inválido (exemplo de validação de segurança)
-  it('Login inválido', async () => {
-    await spec()
-      .post('https://fakestoreapi.com/auth/login')
+  let petId1: number, petId2: number;
+  let orderId1: number, orderId2: number;
+
+  it('Create Pet 1', async () => {
+    const res = await spec()
+      .post('https://petstore.swagger.io/v2/pet')
       .withJson({
-        username: "usuario_invalido",
-        password: "1234"
-      })
-      .expectStatus(401); // login inválido retorna 401
-  });
-
-  // 2. Cadastro de novo produto
-  it('Cadastro um novo produto', async () => {
-    await spec()
-      .post('https://fakestoreapi.com/products')
-      .withJson({
-        name: "Notebook Dell",
-        price: 3500,
-        description: "Notebook de alta performance",
-        category: "eletronicos"
-      })
-      .expectStatus(201)
-      .expectJsonLike({
-        name: "Notebook Dell",
-        price: 3500
-      });
-  });
-
-  // 3. Buscar o produto cadastrado
-  it('Busca o novo produto cadastrado', async () => {
-    await spec()
-      .get('https://fakestoreapi.com/products/1') // id válido existente
-      .expectStatus(200)
-      .expectJsonLike({
-        id: 1
-      });
-  });
-
-  // 4. Produto sem token válido (simulando erro de autorização)
-  it('Produto sem token válido', async () => {
-    await spec()
-      .post('https://fakestoreapi.com/products')
-      .withJson({
-        name: "Produto Teste",
-        price: 100
-      })
-      .expectStatus(401); // sem token, retorna 401
-  });
-
-  // 5. Validar produtos com descrição duplicada
-  it('Validar produtos com descrição duplicada', async () => {
-    await spec()
-      .get('https://fakestoreapi.com/products')
-      .expectStatus(200)
-      .expectJsonLike([{
-        description: /.+/
-      }]);
-  });
-
-  // 6. Adicionar um novo carrinho
-  it('Adiciona um novo carrinho', async () => {
-    await spec()
-      .post('https://fakestoreapi.com/carts')
-      .withJson({
-        userId: 1,
-        products: [
-          { productId: 1, quantity: 2 },
-          { productId: 2, quantity: 1 }
-        ]
-      })
-      .expectStatus(201)
-      .expectJsonLike({
-        userId: 1
-      });
-  });
-
-  // 7. Carrinho inválido (quantidade ou produto errado)
-  it('Carrinho inválido', async () => {
-    await spec()
-      .post('https://fakestoreapi.com/carts')
-      .withJson({
-        userId: 9999, // usuário inexistente
-        products: []
-      })
-      .expectStatus(400); // retorna 400 Bad Request
-  });
-
-  // 8. Concluir compra e excluir carrinho
-  it('Conclui a compra e exclui o carrinho', async () => {
-    await spec()
-      .delete('https://fakestoreapi.com/carts/1') // carrinho válido
-      .expectStatus(200)
-      .expectJsonLike({}); // objeto vazio no retorno
-  });
-
-  // 9. Atualizar título de produto
-  it('Atualiza título do produto', async () => {
-    await spec()
-      .put('https://fakestoreapi.com/products/1')
-      .withJson({
-        title: "Notebook Dell Atualizado"
+        id: Math.floor(Math.random() * 100000),
+        name: "Rex",
+        category: { id: 1, name: "Dogs" },
+        status: "available"
       })
       .expectStatus(200)
-      .expectJsonLike({
-        title: "Notebook Dell Atualizado"
-      });
+      .expectJsonLike({ name: "Rex", status: "available" });
+    petId1 = res.body.id;
   });
 
-  // 10. Atualizar nome de usuário
-  it('Atualiza nome de usuário', async () => {
-    await spec()
-      .put('https://fakestoreapi.com/users/1')
+  it('Create Pet 2', async () => {
+    const res = await spec()
+      .post('https://petstore.swagger.io/v2/pet')
       .withJson({
-        username: "novoUsuario"
+        id: Math.floor(Math.random() * 100000),
+        name: "Mia",
+        category: { id: 2, name: "Cats" },
+        status: "available"
       })
       .expectStatus(200)
-      .expectJsonLike({
-        username: "novoUsuario"
-      });
+      .expectJsonLike({ name: "Mia", status: "available" });
+    petId2 = res.body.id;
+  });
+
+  it('Get Pet 1 by ID', async () => {
+    await spec()
+      .get(`https://petstore.swagger.io/v2/pet/${petId1}`)
+      .expectStatus(200)
+      .expectJsonLike({ id: petId1 });
+  });
+
+  it('Get Pet 2 by ID', async () => {
+    await spec()
+      .get(`https://petstore.swagger.io/v2/pet/${petId2}`)
+      .expectStatus(200)
+      .expectJsonLike({ id: petId2 });
+  });
+
+  it('Update Pet 1 status', async () => {
+    await spec()
+      .put('https://petstore.swagger.io/v2/pet')
+      .withJson({ id: petId1, name: "Rex", status: "sold" })
+      .expectStatus(200)
+      .expectJsonLike({ status: "sold" });
+  });
+
+  it('Update Pet 2 status', async () => {
+    await spec()
+      .put('https://petstore.swagger.io/v2/pet')
+      .withJson({ id: petId2, name: "Mia", status: "pending" })
+      .expectStatus(200)
+      .expectJsonLike({ status: "pending" });
+  });
+
+  it('Get pets by status sold', async () => {
+    await spec()
+      .get('https://petstore.swagger.io/v2/pet/findByStatus?status=sold')
+      .expectStatus(200);
+  });
+
+  it('Get pets by status pending', async () => {
+    await spec()
+      .get('https://petstore.swagger.io/v2/pet/findByStatus?status=pending')
+      .expectStatus(200);
+  });
+
+  it('Update Pet 1 name', async () => {
+    await spec()
+      .put('https://petstore.swagger.io/v2/pet')
+      .withJson({ id: petId1, name: "Rexy", status: "sold" })
+      .expectStatus(200)
+      .expectJsonLike({ name: "Rexy" });
+  });
+
+  it('Update Pet 2 name', async () => {
+    await spec()
+      .put('https://petstore.swagger.io/v2/pet')
+      .withJson({ id: petId2, name: "Miazinha", status: "pending" })
+      .expectStatus(200)
+      .expectJsonLike({ name: "Miazinha" });
+  });
+
+  it('Create Order 1', async () => {
+    const res = await spec()
+      .post('https://petstore.swagger.io/v2/store/order')
+      .withJson({
+        id: Math.floor(Math.random() * 100000),
+        petId: petId1,
+        quantity: 1,
+        shipDate: new Date().toISOString(),
+        status: "placed",
+        complete: true
+      })
+      .expectStatus(200)
+      .expectJsonLike({ petId: petId1, status: "placed" });
+    orderId1 = res.body.id;
+  });
+
+  it('Create Order 2', async () => {
+    const res = await spec()
+      .post('https://petstore.swagger.io/v2/store/order')
+      .withJson({
+        id: Math.floor(Math.random() * 100000),
+        petId: petId2,
+        quantity: 2,
+        shipDate: new Date().toISOString(),
+        status: "placed",
+        complete: false
+      })
+      .expectStatus(200)
+      .expectJsonLike({ petId: petId2, status: "placed" });
+    orderId2 = res.body.id;
+  });
+
+  it('Get Order 1 by ID', async () => {
+    await spec()
+      .get(`https://petstore.swagger.io/v2/store/order/${orderId1}`)
+      .expectStatus(200)
+      .expectJsonLike({ id: orderId1 });
+  });
+
+  it('Get Order 2 by ID', async () => {
+    await spec()
+      .get(`https://petstore.swagger.io/v2/store/order/${orderId2}`)
+      .expectStatus(200)
+      .expectJsonLike({ id: orderId2 });
+  });
+
+  it('Get store inventory', async () => {
+    await spec()
+      .get('https://petstore.swagger.io/v2/store/inventory')
+      .expectStatus(200);
+  });
+
+  it('Get pets by status available', async () => {
+    await spec()
+      .get('https://petstore.swagger.io/v2/pet/findByStatus?status=available')
+      .expectStatus(200);
+  });
+
+  it('Update Pet 1 status to available', async () => {
+    await spec()
+      .put('https://petstore.swagger.io/v2/pet')
+      .withJson({ id: petId1, name: "Rexy", status: "available" })
+      .expectStatus(200)
+      .expectJsonLike({ status: "available" });
+  });
+
+  it('Update Pet 2 status to available', async () => {
+    await spec()
+      .put('https://petstore.swagger.io/v2/pet')
+      .withJson({ id: petId2, name: "Miazinha", status: "available" })
+      .expectStatus(200)
+      .expectJsonLike({ status: "available" });
+  });
+
+  it('Get all pets to verify updates', async () => {
+    await spec()
+      .get('https://petstore.swagger.io/v2/pet/findByStatus?status=available')
+      .expectStatus(200);
+  });
+
+  it('Get all orders to verify', async () => {
+    await spec()
+      .get('https://petstore.swagger.io/v2/store/order/' + orderId1)
+      .expectStatus(200);
+    await spec()
+      .get('https://petstore.swagger.io/v2/store/order/' + orderId2)
+      .expectStatus(200);
   });
 
 });
